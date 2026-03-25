@@ -1,0 +1,66 @@
+package com.ecommerce.user.controller;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import com.ecommerce.user.dto.UserCreateDto;
+import com.ecommerce.user.dto.UserDto;
+import com.ecommerce.user.entity.User;
+import com.ecommerce.user.exception.ErrorDetails;
+import com.ecommerce.user.exception.RoleNotFoundException;
+import com.ecommerce.user.mapper.UserMapper;
+import com.ecommerce.user.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.annotation.PostConstruct;
+
+@RestController
+@RequestMapping("/users")
+public class UserController {
+
+	@Autowired
+	private UserService userService;
+	
+	@Autowired
+	private UserMapper userMapper;
+	
+	@PostConstruct
+	public void addRoles() {
+		userService.addRoles();
+	}
+	@Operation(
+		    summary = "Create a new user",
+		    description = "Creates a user with role and basic details"
+		)
+		@ApiResponses({
+		    @ApiResponse(responseCode = "201", description = "User created successfully"),
+		    @ApiResponse(responseCode = "400", description = "Invalid request"),
+		    @ApiResponse(responseCode = "404",description = "Role not found",
+		    content = @Content(schema = @Schema(implementation = ErrorDetails.class))),
+		    @ApiResponse(responseCode = "500", description = "Server error")
+		})
+	@PostMapping("/createUser")
+	public ResponseEntity<UserDto> createUser(@RequestParam String role,@RequestBody UserCreateDto createDto) throws RoleNotFoundException{
+		User user = userService.addUser(role, createDto);
+		return new ResponseEntity<UserDto>(userMapper.toUserDto(user),HttpStatus.CREATED);
+		
+	}
+	
+	
+	@PostMapping("/registerCustomer")
+	public ResponseEntity<UserDto> registerCustomer(@RequestBody UserCreateDto createDto){
+		UserDto registerCustomer = userService.registerCustomer(createDto);
+		return new ResponseEntity<UserDto>(registerCustomer,HttpStatus.OK);
+		
+	}
+	
+
+}
